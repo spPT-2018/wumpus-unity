@@ -1,56 +1,29 @@
-﻿using System;
+﻿using Assets.Scripts;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour {
-    private class World
-    {
-        public int Height = 4;
-        public int Width = 4;
-
-        public bool PitAt(Position p)
-        {
-            if ((p.X == 3 && p.Y == 3) || (p.X == 2 && p.Y == 2) || (p.X == 2 && p.Y == 0)) return true;
-            return false;
-        }
-
-        public bool WumpusAt(Position p)
-        {
-            if (p.X == 0 && p.Y == 2)
-                return true;
-            return false;
-
-        }
-
-        public bool GoldAt(Position p)
-        {
-            if (p.X == 1 && p.Y == 2) return true;
-            return false;
-        }
-    }
-
-    private struct Position
-    {
-        public int X { get; set; }
-        public int Y { get; set; }
-
-        public Position(int x, int y)
-        {
-            X = x;
-            Y = y;
-        }
-    }
-
-    private World world;
+    private CaveWorld world;
     public GameObject PlatformPrefab;
+    public GameObject DoorPrefab;
     public GameObject WorldGameObject;
 
     public float YPosition = 5.35f;
 
+    [SerializeField]
+    private List<Position> WumpusPositions;
+    [SerializeField]
+    private List<Position> PitPositions;
+    [SerializeField]
+    private Position GoldPosition;
+
     private Dictionary<string, GameObject> WumpusPrefabs;
     private Dictionary<string, AudioClip> WumpusSounds;
     private Agent _agent;
+    private GameObject Treasure;
+    private bool _gameRunning = true;
 
     [Serializable]
     public struct WumpusObject
@@ -67,7 +40,8 @@ public class WorldGenerator : MonoBehaviour {
     public WumpusObject[] ObjectPrefabs;
     public SoundEffect[] SoundEffects;
 
-    public AudioSource AudioSrc;
+    public AudioSource MoveAudioSrc;
+    public AudioSource EffectsAudioSrc;
 
     private void Awake()
     {
@@ -81,24 +55,72 @@ public class WorldGenerator : MonoBehaviour {
         {
             WumpusSounds.Add(pfb.Name, pfb.Sound);
         }
-        AudioSrc = GetComponent<AudioSource>();
+        MoveAudioSrc = GetComponent<AudioSource>();
+    }
+
+    private void PlaySound(string soundName, bool specialEffect = true)
+    {
+        var audioSrc = specialEffect ? EffectsAudioSrc : MoveAudioSrc;
+
+        audioSrc.clip = WumpusSounds[soundName];
+        audioSrc.Play();
     }
 
     // Use this for initialization
     void Start () {
-        world = new World();
+        world = new CaveWorld(WumpusPositions, PitPositions, GoldPosition);
         CreateWorldPlatform();
         _agent = Instantiate(WumpusPrefabs["Agent"], new Vector3(0, YPosition, 0), Quaternion.Euler(0, 180f, 0)).GetComponent<Agent>();
-	}
+        EffectsAudioSrc = _agent.GetComponent<AudioSource>();
+
+        world.OnBreezePercepted += () =>
+        {
+            PlaySound("Breeze");
+        };
+        world.OnMove += (Position p) =>
+        {
+            var vecPos = new Vector3(p.X, _agent.transform.position.y, p.Y);
+            _agent.SetLerpPos(vecPos);
+            PlaySound("Move", false);
+        };
+        world.OnPitEncountered += () =>
+        {
+            Destroy(_agent);
+            PlaySound("Pit");
+            _gameRunning = false;
+        };
+        world.OnStenchPercepted += () => PlaySound("Stench");
+        world.OnTreasureEncountered += () =>
+        {
+            Destroy(Treasure);
+            PlaySound("Gold");
+        };
+        world.OnWumpusEncountered += () =>
+        {
+            Destroy(_agent);
+            PlaySound("Wumpus");
+            _gameRunning = false;
+        };
+        world.OnGoalComplete += () =>
+        {
+            PlaySound("Goal");
+            _gameRunning = false;
+        };
+    }
+
+    private float UpdateTimer = 0f;
+    public float UpdateTimeSecs = 1f;
 
     private void Update()
     {
-        if(Input.GetKeyUp(KeyCode.Space))
+        if (!_gameRunning) return;
+        if (UpdateTimer > UpdateTimeSecs)
         {
-            MoveAgent(_agent.transform.position + new Vector3(0, 0, 1));
-            AudioSrc.clip = WumpusSounds["Move"];
-            AudioSrc.Play();
+            world.Iterate();
+            UpdateTimer = 0f;
         }
+        else
+            UpdateTimer += Time.deltaTime;
     }
 
     void MoveAgent(Vector3 newAgentPos, float moveDuration = 1f)
@@ -108,16 +130,20 @@ public class WorldGenerator : MonoBehaviour {
 
     void CreateWorldPlatform()
     {
-        for (int i = 0; i < world.Height; i++)
+        for (int i = 0; i < world.WorldHeight; i++)
         {
-            for (int j = 0; j < world.Width; j++)
+            for (int j = 0; j < world.WorldWidth; j++)
             {
-                var platform = Instantiate(PlatformPrefab, new Vector3(i, 0, j), Quaternion.identity, WorldGameObject.transform);
+                GameObject platform;
+                if (i == 0 && j == 0)
+                    platform = Instantiate(DoorPrefab, new Vector3(i, 0, j), Quaternion.identity, WorldGameObject.transform);
+                else
+                    platform = Instantiate(PlatformPrefab, new Vector3(i, 0, j), Quaternion.identity, WorldGameObject.transform);
                 platform.name = $"({i},{j})";
                 var pos = new Position(i, j);
 
                 if (world.GoldAt(pos))
-                    Instantiate(WumpusPrefabs["Treasure"], new Vector3(i, YPosition, j), Quaternion.Euler(0, 180f, 0));
+                    Treasure = Instantiate(WumpusPrefabs["Treasure"], new Vector3(i, YPosition, j), Quaternion.Euler(0, 180f, 0));
                 else if (world.PitAt(pos))
                     Instantiate(WumpusPrefabs["Pit"], new Vector3(i, YPosition, j), Quaternion.Euler(0, 180f, 0));
                 else if (world.WumpusAt(pos))
