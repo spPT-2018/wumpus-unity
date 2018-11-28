@@ -157,8 +157,8 @@ MonoBehaviour:
   - X: 2
     Y: 3
   GoldPosition:
-    X: 3
-    Y: 3
+    X: 1
+    Y: 2
   ObjectPrefabs:
   - Name: Agent
     Prefab: {fileID: 1525883852547692, guid: 240675fa03ec9694da4568ab43154833, type: 2}
@@ -185,7 +185,8 @@ MonoBehaviour:
     Sound: {fileID: 8300000, guid: 6652e18dfce192f488b98b17c2867b4f, type: 3}
   MoveAudioSrc: {fileID: 0}
   EffectsAudioSrc: {fileID: 0}
-  UpdateTimeSecs: 1
+  numberOfIterations: 10
+  UpdateTimeSecs: 0.5
 --- !u!4 &205317849
 Transform:
   m_ObjectHideFlags: 0

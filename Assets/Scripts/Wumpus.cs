@@ -110,6 +110,11 @@ namespace Assets.Scripts
             MrCat.PerceiveCurrentPosition(percepts);
         }
 
+        public void Reset()
+        {
+            MrCat.FoundGold = false;
+            MrCat.ClearTrace();
+        }
 
         Percepts GeneratePercepts()
         {
@@ -175,6 +180,13 @@ namespace Assets.Scripts
 
         public Position CurrentPosition = new Position(0, 0);
         private Stack<Position> Trace = new Stack<Position>();
+
+        public void ClearTrace()
+        {
+            Trace.Clear();
+            PerceptedPlaces = new Dictionary<Position, Percepts>();
+            KnowledgeOfPlaces = new Dictionary<Position, Knowledge>();
+        }
 
         public void PerceiveCurrentPosition(Percepts percepts)
         {

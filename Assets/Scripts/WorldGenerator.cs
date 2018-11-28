@@ -2,6 +2,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour {
@@ -43,6 +45,38 @@ public class WorldGenerator : MonoBehaviour {
     public AudioSource MoveAudioSrc;
     public AudioSource EffectsAudioSrc;
 
+    private static StreamWriter LogFile;
+    private static string mode;
+    public int numberOfIterations = 10;
+    private int iterations = 0;
+
+    private string comment = "";
+
+    public static void OpenLogFile(string filename)
+    {
+        var curDir = Directory.GetCurrentDirectory();
+        UnityEngine.Debug.Log(curDir);
+        string fullPath;
+        if (Application.isEditor)
+            fullPath = $"{curDir}/{filename}";
+        else
+            fullPath = $"{curDir}/../{filename}";
+
+        if (File.Exists(fullPath))
+        {
+            UnityEngine.Debug.Log("Deleting old result file");
+            File.Delete(fullPath);
+        }
+
+        LogFile = new StreamWriter(fullPath);
+    }
+
+    public static void CloseLogFile()
+    {
+        LogFile.Flush();
+        LogFile.Close();
+    }
+
     private void Awake()
     {
         WumpusPrefabs = new Dictionary<string, GameObject>();
@@ -68,6 +102,10 @@ public class WorldGenerator : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        mode = Application.isEditor ? "Editor" : "Release";
+        OpenLogFile($"Wumpus Unity ({mode}).csv");
+        LogFile.WriteLine("Iteration No.;Iterate time (ms);Comment");
+
         world = new CaveWorld(WumpusPositions, PitPositions, GoldPosition);
         CreateWorldPlatform();
         _agent = Instantiate(WumpusPrefabs["Agent"], new Vector3(0, YPosition, 0), Quaternion.Euler(0, 180f, 0)).GetComponent<Agent>();
@@ -104,20 +142,40 @@ public class WorldGenerator : MonoBehaviour {
         world.OnGoalComplete += () =>
         {
             PlaySound("Goal");
-            _gameRunning = false;
+
+            world.Reset();
+            Treasure = Instantiate(WumpusPrefabs["Treasure"], new Vector3(GoldPosition.X, YPosition, GoldPosition.Y), Quaternion.Euler(0, 180f, 0));
+            iterations++;
+            _gameRunning = iterations < numberOfIterations;
+            comment = "reset";
         };
+    }
+
+    private void OnDestroy()
+    {
+        CloseLogFile();
     }
 
     private float UpdateTimer = 0f;
     public float UpdateTimeSecs = 1f;
+    private int iterationNumber;
 
     private void Update()
     {
-        if (!_gameRunning) return;
+        if (!_gameRunning)
+        {
+            return;
+        }
         if (UpdateTimer > UpdateTimeSecs)
         {
+            var t = new Stopwatch();
+            t.Start();
             world.Iterate();
             UpdateTimer = 0f;
+            t.Stop();
+            LogFile.WriteLine($"{iterationNumber};{t.Elapsed.TotalMilliseconds};{comment}");
+            comment = "";
+            iterationNumber++;
         }
         else
             UpdateTimer += Time.deltaTime;

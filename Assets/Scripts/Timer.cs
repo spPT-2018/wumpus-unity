@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Timer
@@ -14,6 +12,7 @@ public class Timer
 
     public double Check()
     {
+        Debug.Log($"Started: {_started.Ticks}, now: {DateTime.UtcNow.Ticks}");
         return DateTime.UtcNow.Subtract(_started).Ticks * 100D;
     }
 
