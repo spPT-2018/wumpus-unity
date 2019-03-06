@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\Users\zhex\.Rider2018.3\system\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\zhex\.Rider2018.3\system\resharper-host\local\Transient\ReSharperHost\v183\SolutionCaches\_wumpus-unity.-1572865606.00" t="ExcludeRecursive" />
+    <e p="C:\Users\zhex\Documents\Projects\wumpus-unity" t="IncludeRecursive">
+      <e p="Assembly-CSharp.csproj" t="IncludeRecursive" />
+      <e p="Assets" t="Include">
+        <e p="Scripts" t="Include">
+          <e p="Agent.cs" t="Include" />
+          <e p="Benchmark.cs" t="Include" />
+          <e p="Test2D.cs" t="Include" />
+          <e p="Test3D.cs" t="Include" />
+          <e p="TestMath.cs" t="Include" />
+          <e p="Timer.cs" t="Include" />
+          <e p="WorldGenerator.cs" t="Include" />
+          <e p="Wumpus.cs" t="Include" />
+        </e>
+      </e>
+      <e p="Library" t="ExcludeRecursive" />
+      <e p="obj" t="ExcludeRecursive" />
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="Temp" t="ExcludeRecursive">
+        <e p="bin" t="ExcludeRecursive" />
+      </e>
+      <e p="wumpus-unity.sln" t="IncludeFlat" />
+    </e>
+  </component>
+</project>
