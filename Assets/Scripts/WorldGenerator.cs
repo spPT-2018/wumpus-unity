@@ -3,7 +3,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 public class WorldGenerator : MonoBehaviour {
@@ -79,6 +81,9 @@ public class WorldGenerator : MonoBehaviour {
 
     private void Awake()
     {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+        
         WumpusPrefabs = new Dictionary<string, GameObject>();
         foreach (var pfb in ObjectPrefabs)
         {
@@ -104,7 +109,7 @@ public class WorldGenerator : MonoBehaviour {
     void Start () {
         mode = Application.isEditor ? "Editor" : "Release";
         OpenLogFile($"Wumpus Unity ({mode}).csv");
-        LogFile.WriteLine("Iteration No.;Iterate time (ms);Comment");
+        LogFile.WriteLine("Iteration no.,Time (microseconds),Comment");
 
         world = new CaveWorld(WumpusPositions, PitPositions, GoldPosition);
         CreateWorldPlatform();
@@ -132,6 +137,7 @@ public class WorldGenerator : MonoBehaviour {
         {
             Destroy(Treasure);
             PlaySound("Gold");
+            comment = "gold";
         };
         world.OnWumpusEncountered += () =>
         {
@@ -157,7 +163,7 @@ public class WorldGenerator : MonoBehaviour {
     }
 
     private float UpdateTimer = 0f;
-    public float UpdateTimeSecs = 1f;
+    public float UpdateTimeSecs = 0.5f;
     private int iterationNumber;
 
     private void Update()
@@ -173,7 +179,7 @@ public class WorldGenerator : MonoBehaviour {
             world.Iterate();
             UpdateTimer = 0f;
             t.Stop();
-            LogFile.WriteLine($"{iterationNumber};{t.Elapsed.TotalMilliseconds};{comment}");
+            LogFile.WriteLine($"{iterationNumber},{t.Elapsed.TotalMilliseconds * 1000},{comment}");
             comment = "";
             iterationNumber++;
         }
