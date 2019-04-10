@@ -49,7 +49,7 @@ public class WorldGenerator : MonoBehaviour {
 
     private static StreamWriter LogFile;
     private static string mode;
-    public int numberOfIterations = 10;
+    public int numberOfIterations = 25;
     private int iterations = 0;
 
     private string comment = "";
